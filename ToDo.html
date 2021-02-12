@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoList</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-ygbV9kiqUc6oa4msXn9868pTtWMgiQaeYH7/t7LECLbyPA2x65Kgf80OJFdroafW" crossorigin="anonymous"></script>
+
+    <!-- Bootstrap 4 Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+    <style>
+        h2 { text-align: center;}
+        .container { margin: auto; width: auto; }
+        .checkbox { width: 50px; height:30px; }
+        input { margin-right: 20px; }
+        button[name] { margin-right: 20px; }
+        .list-group-item { display: flex }
+        .row { margin: 10px; }
+        .alert { display: none; }
+    </style>
+</head>
+<body>
+    <div class="row"><!-- ROW 1 -->
+        <div class="col-md-8">
+            <h2>To Do List</h2>
+        </div>
+    </div><!-- ROW 1 -->
+
+    <div class="row"><!-- ROW 2 -->
+        <div class="col-md-8">
+            <ul class="list-group"></ul>
+        </div>
+    </div><!-- ROW 2 -->
+
+    <div class="row"><!-- ROW 3 -->
+        <div class="col-md-8">
+            <div class="alert alert-danger" role="alert">
+                Task name invalid or already exists!
+              </div>      
+        </div>
+    </div><!-- ROW 3 -->
+
+    <div class="row"><!-- ROW 3 -->
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Type your new task name...">
+        </div>
+        <div class="col-md-2">
+            <button type="button" class="btn form-control btn-primary">New Task</button>
+        </div>
+    </div><!-- ROW 3 -->
+
+    <script>
+        const ul = document.querySelector('ul');
+        const newTaskBtn = document.querySelector('button');
+        const newTaskText = document.querySelector('input');
+        const alertMessage = document.querySelector('.alert');
+
+        const taskObj = {
+            taskArray: [
+                { name: 'Agarrar ou soltar o guaxinim', done: true },
+                { name: 'Dar banho no mamaco', done: false },
+                { name: 'Tomar café sem açúcar', done: true },
+                { name: 'Cheirar maconha', done: false },
+            ],
+            createRemoveButton(taskToRemove){
+                const removeButton = document.createElement('button');
+
+                removeButton.type = 'button';
+                removeButton.className = 'bi-trash btn btn-danger';
+                removeButton.addEventListener('click', () => {
+                    this.removeTask(taskToRemove);
+                });
+                return removeButton;
+            },
+            createUpdateButton(taskToUpdate){
+                const updateButton = document.createElement('button');
+
+                updateButton.type = 'button';
+                updateButton.name = 'update-button';
+                updateButton.className = 'bi-pencil-square btn btn-warning updateButton';
+                updateButton.addEventListener('click', el => {
+                    const previousElement = el.target.previousSibling;
+                    const updateButtonElement = el.target;
+                    this.updateTask(taskToUpdate, previousElement, updateButtonElement);
+                });
+                return updateButton;
+            },
+            createCheckboxButton(taskName, taskToDone){
+                const checkbox = document.createElement('input');
+
+                checkbox.className = 'form-check-input checkbox';
+                checkbox.type = 'checkbox';
+                checkbox.checked = taskToDone;
+                checkbox.addEventListener('click', el => {
+                    const checkedStatus = el.target.checked;
+                    this.doneTask(taskName, checkedStatus);
+                });
+                return checkbox;
+            },
+            createTaskNameInput(taskNameToInput){
+                const input = document.createElement('input');
+                    
+                input.className = 'form-control';
+                input.value = taskNameToInput;
+                input.name = 'task';
+                input.readOnly = true;
+                return input;
+            },
+            taskList(){
+                this.cleanAndFocus();
+
+                this.taskArray.forEach( ({name, done}) => {
+                    const li = document.createElement('li');                            
+                    const createCheckboxElement = this.createCheckboxButton(name, done);
+                    const createTaskNameInputElement = this.createTaskNameInput(name);
+                    const createUpdateButtonElement = this.createUpdateButton(name);
+                    const createRemoveButtonElement = this.createRemoveButton(name);
+
+                    li.className = 'list-group-item';
+                    li.append(createCheckboxElement, createTaskNameInputElement, createUpdateButtonElement, createRemoveButtonElement);
+                    ul.appendChild(li);
+                } );
+            },
+            addTask(newTaskName){
+                const isValid = this.validateTask(newTaskName);
+
+                if( isValid ){
+                    alertMessage.style.display = 'none';
+                    this.taskArray.push(
+                        { name: newTaskName, done: false }
+                    );
+                    this.taskList();
+                }else{
+                    alertMessage.style.display = 'block';
+                }    
+            },
+            updateTask(nameTarget, previousElement, updateButtonElement){
+                const isValid = this.validateTask(previousElement.value);
+                const indexToUpdate = this.indexTask(nameTarget);
+                const inputValue = document.getElementsByName('task')[indexToUpdate].value;
+                const objectValue = taskObj.taskArray[indexToUpdate].name;
+                const isSameValue = inputValue === objectValue;
+
+                if(!previousElement.readOnly){
+                    if( isSameValue && !isValid ){
+                        previousElement.readOnly = true;
+                        updateButtonElement.className = 'bi-pencil-square btn btn-warning';
+                     }else{
+                        this.taskList();
+                        alertMessage.style.display = 'block';
+                     }
+                }else if(previousElement.readOnly){
+                    previousElement.readOnly = false;
+                    updateButtonElement.className = 'bi-check-square btn btn-success';
+                    previousElement.focus(); 
+                }else{
+                    alertMessage.style.display = 'none';
+                    this.taskArray[indexToUpdate].name = previousElement.value;
+                    previousElement.readOnly = true;
+                    updateButtonElement.className = 'bi-check-square btn btn-warning';
+                 }
+            },
+            doneTask(nameTarget, doneTarget){
+                const indexToDone = this.indexTask(nameTarget);
+                this.taskArray[indexToDone].done = doneTarget;
+            },
+            removeTask(nameTarget){
+                const indexToRemove = this.indexTask(nameTarget);
+                this.taskArray.splice(indexToRemove, 1);
+                this.taskList();
+            },
+            cleanAndFocus(){
+                ul.innerHTML = '';
+                newTaskText.value = '';
+                newTaskText.focus();
+            },
+            validateTask(newTaskName){
+                const taskText = newTaskName.trim();
+                const isExist = this.taskArray.some( ({name}) => name === taskText);
+                const isEmpty = taskText === '';
+                
+                return !isExist && !isEmpty;
+            },
+            indexTask(nameTarget){
+                return this.taskArray.findIndex( ({name}) => name === nameTarget );
+            },
+        };
+
+        newTaskBtn.addEventListener('click', () => {
+            taskObj.addTask(newTaskText.value);
+        });
+
+        taskObj.taskList();
+    </script>
+</body>
+</html>
